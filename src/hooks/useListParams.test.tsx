@@ -105,7 +105,7 @@ test("shows sign-in on expiry and restores the current route", async () => {
   ).toBeVisible();
   window.dispatchEvent(new Event("clinic-auth-expired"));
   expect(
-    await screen.findByRole("heading", { name: "Sign in to clinic stock" }),
+    await screen.findByRole("heading", { name: "Sign in to Savannah stock" }),
   ).toBeVisible();
   expect(window.location.pathname).toBe("/items/42");
   expect(window.location.search).toBe("?from=stock");

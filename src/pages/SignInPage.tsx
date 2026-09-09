@@ -33,15 +33,15 @@ export function SignInPage({ onSuccess }: { onSuccess: () => Promise<void> }) {
     <main className="signin">
       <section className="signin-panel" aria-labelledby="signin-title">
         <div className="signin-panel__inner">
-          <header className="signin-brand" aria-label="Clinic stock">
+          <header className="signin-brand" aria-label="Savannah stock">
             <span className="signin-brand__mark" aria-hidden="true">
               <span />
             </span>
-            <span>Clinic stock</span>
+            <span>Savannah stock</span>
           </header>
 
           <div className="signin-copy">
-            <h1 id="signin-title">Sign in to clinic stock</h1>
+            <h1 id="signin-title">Sign in to Savannah stock</h1>
             <p>Use your staff catalogue account.</p>
           </div>
 
@@ -141,7 +141,7 @@ export function SignInPage({ onSuccess }: { onSuccess: () => Promise<void> }) {
           </div>
         </div>
         <p className="signin-visual__footnote reveal reveal--five">
-          Built for calm, accurate inventory work.
+          Built for accurate inventory work.
         </p>
       </aside>
     </main>
