@@ -1,11 +1,29 @@
 import { Link, useLocation } from "react-router-dom";
 import type { Product } from "../types";
 
-export function ProductCard({ product }: { product: Product }) {
+type ProductCardProps = {
+  product: Product;
+  selection?: { selected: boolean; onToggle: () => void };
+};
+
+export function ProductCard({ product, selection }: ProductCardProps) {
   const location = useLocation();
 
   return (
-    <li className="product-card">
+    <article
+      className={`product-card${selection?.selected ? " product-card--selected" : ""}`}
+      role="listitem"
+    >
+      {selection && (
+        <label className="product-card__selection">
+          <input
+            type="checkbox"
+            checked={selection.selected}
+            onChange={selection.onToggle}
+          />
+          <span>Select {product.title}</span>
+        </label>
+      )}
       <Link
         className="product-card__link"
         to={{ pathname: `/items/${product.id}`, search: location.search }}
@@ -33,6 +51,6 @@ export function ProductCard({ product }: { product: Product }) {
           </dl>
         </div>
       </Link>
-    </li>
+    </article>
   );
 }

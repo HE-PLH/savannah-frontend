@@ -105,36 +105,44 @@ export function SignInPage({ onSuccess }: { onSuccess: () => Promise<void> }) {
         className="signin-visual"
         aria-label="Reliable stock information for every ward"
       >
-        <div className="signin-visual__wash" />
+        <div className="signin-visual__image" aria-hidden="true" />
+        <div className="signin-visual__wash" aria-hidden="true" />
         <div className="signin-visual__content">
-          <p className="signin-visual__kicker">Clinic inventory</p>
-          <h2>Know what is available, wherever you are.</h2>
-          <p>
+          <p className="signin-visual__kicker reveal reveal--one">
+            Clinic inventory
+          </p>
+          <h2 className="reveal reveal--two">
+            Clarity for every count.
+            <span>Confidence for every ward.</span>
+          </h2>
+          <p className="signin-visual__intro reveal reveal--three">
             Search the catalogue, review item details, and keep physical counts
             accurate across the clinic.
           </p>
-          <div className="stock-preview" aria-hidden="true">
-            <div className="stock-preview__header">
-              <span />
-              <span />
-              <span />
+          <div className="signin-features reveal reveal--four">
+            <div className="signin-feature">
+              <span className="signin-feature__icon" aria-hidden="true">
+                194
+              </span>
+              <span>
+                <strong>Complete catalogue</strong>
+                <small>Fast, focused stock visibility</small>
+              </span>
             </div>
-            <div className="stock-preview__body">
-              <div className="stock-preview__search" />
-              <div className="stock-preview__rows">
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-                <span />
-              </div>
+            <div className="signin-feature">
+              <span className="signin-feature__icon" aria-hidden="true">
+                ✓
+              </span>
+              <span>
+                <strong>Reliable corrections</strong>
+                <small>Clear status at every step</small>
+              </span>
             </div>
           </div>
         </div>
+        <p className="signin-visual__footnote reveal reveal--five">
+          Built for calm, accurate inventory work.
+        </p>
       </aside>
     </main>
   );

@@ -1,7 +1,50 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { api } from "../api";
 import type { User } from "../types";
+
+type NetworkState = "online" | "offline" | "reconnected";
+
+export function NetworkStatus() {
+  const [status, setStatus] = useState<NetworkState>(() =>
+    navigator.onLine ? "online" : "offline",
+  );
+
+  useEffect(() => {
+    const handleOffline = () => setStatus("offline");
+    const handleOnline = () =>
+      setStatus((current) =>
+        current === "offline" ? "reconnected" : "online",
+      );
+    window.addEventListener("offline", handleOffline);
+    window.addEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("offline", handleOffline);
+      window.removeEventListener("online", handleOnline);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (status !== "reconnected") return;
+    const timeout = window.setTimeout(() => setStatus("online"), 4_000);
+    return () => window.clearTimeout(timeout);
+  }, [status]);
+
+  if (status === "online") return null;
+  return (
+    <div
+      className={`network-status network-status--${status}`}
+      role="status"
+      aria-live="polite"
+    >
+      <span className="network-status__dot" aria-hidden="true" />
+      {status === "offline"
+        ? "You’re offline. Changes cannot be saved until you reconnect."
+        : "Back online. Data will refresh automatically."}
+    </div>
+  );
+}
 
 export function AppShell({ user }: { user: User }) {
   const navigate = useNavigate();
@@ -40,6 +83,7 @@ export function AppShell({ user }: { user: User }) {
           </div>
         </div>
       </header>
+      <NetworkStatus />
       <main id="main-content" className="page" tabIndex={-1}>
         <Outlet />
       </main>

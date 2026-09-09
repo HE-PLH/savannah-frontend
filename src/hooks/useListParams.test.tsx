@@ -4,8 +4,9 @@ import userEvent from "@testing-library/user-event";
 import { BrowserRouter, MemoryRouter, useLocation } from "react-router-dom";
 import { App } from "../App";
 import { ApiError, api } from "../api";
+import { NetworkStatus } from "../components/AppShell";
 import { StockPage } from "../pages/StockPage";
-import type { User } from "../types";
+import type { Product, User } from "../types";
 import { useListParams } from "./useListParams";
 
 vi.mock("../pages/ItemPage", () => ({
@@ -19,6 +20,19 @@ const signedInUser: User = {
   lastName: "User",
   email: "ward.user@example.com",
 };
+
+function product(id: number): Product {
+  return {
+    id,
+    title: `Item ${id}`,
+    description: `Description ${id}`,
+    category: "supplies",
+    price: id,
+    rating: 4,
+    stock: 10,
+    thumbnail: `/item-${id}.png`,
+  };
+}
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -150,4 +164,104 @@ test("recovers from the upstream /http/500 path and then shows empty results", a
     await screen.findByRole("heading", { name: "No stock items found" }),
   ).toBeVisible();
   expect(products).toHaveBeenCalledTimes(2);
+});
+
+test("announces offline and reconnected states", () => {
+  Object.defineProperty(navigator, "onLine", {
+    configurable: true,
+    value: true,
+  });
+  render(<NetworkStatus />);
+
+  expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  act(() => {
+    window.dispatchEvent(new Event("offline"));
+  });
+  expect(screen.getByRole("status")).toHaveTextContent("You’re offline");
+  act(() => {
+    window.dispatchEvent(new Event("online"));
+  });
+  expect(screen.getByRole("status")).toHaveTextContent("Back online");
+});
+
+test("loads the full catalogue but renders only the virtual window", async () => {
+  const catalogue = Array.from({ length: 194 }, (_, index) =>
+    product(index + 1),
+  );
+  vi.spyOn(api, "categories").mockResolvedValue([]);
+  const products = vi.spyOn(api, "products").mockResolvedValue({
+    products: catalogue,
+    total: catalogue.length,
+    skip: 0,
+    limit: 200,
+  });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+
+  render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <StockPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+
+  expect(await screen.findByText("194 items")).toBeVisible();
+  expect(products).toHaveBeenCalledWith(
+    expect.objectContaining({ page: 1, limit: 200 }),
+    expect.any(AbortSignal),
+  );
+  expect(screen.getAllByRole("listitem").length).toBeLessThan(194);
+});
+
+test("submits several selected stock corrections together", async () => {
+  const catalogue = [product(1), product(2), product(3)];
+  vi.spyOn(api, "categories").mockResolvedValue([]);
+  vi.spyOn(api, "products").mockResolvedValue({
+    products: catalogue,
+    total: catalogue.length,
+    skip: 0,
+    limit: 200,
+  });
+  const bulkCorrections = vi.spyOn(api, "bulkCorrections").mockResolvedValue({
+    results: [
+      { productId: 1, stock: 15, status: "success", error: null },
+      { productId: 2, stock: 25, status: "success", error: null },
+    ],
+    summary: { total: 2, succeeded: 2, failed: 0 },
+  });
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const user = userEvent.setup();
+
+  render(
+    <QueryClientProvider client={queryClient}>
+      <MemoryRouter>
+        <StockPage />
+      </MemoryRouter>
+    </QueryClientProvider>,
+  );
+
+  await user.click(
+    await screen.findByRole("button", { name: "Bulk correct stock" }),
+  );
+  await user.click(screen.getByLabelText("Select Item 1"));
+  await user.click(screen.getByLabelText("Select Item 2"));
+  const firstStock = screen.getByLabelText("Item 1");
+  const secondStock = screen.getByLabelText("Item 2");
+  await user.clear(firstStock);
+  await user.type(firstStock, "15");
+  await user.clear(secondStock);
+  await user.type(secondStock, "25");
+  await user.click(screen.getByRole("button", { name: "Save 2 corrections" }));
+
+  await waitFor(() =>
+    expect(bulkCorrections).toHaveBeenCalledWith([
+      { productId: 1, stock: 15 },
+      { productId: 2, stock: 25 },
+    ]),
+  );
+  expect(await screen.findByText("Saved 2 of 2 corrections.")).toBeVisible();
 });

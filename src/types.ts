@@ -27,6 +27,15 @@ export type ProductPage = {
   skip: number;
   limit: number;
 };
+export type StockCorrection = { productId: number; stock: number };
+export type BulkCorrectionResult = StockCorrection & {
+  status: "success" | "failure";
+  error: { code: string; message: string } | null;
+};
+export type BulkCorrectionResponse = {
+  results: BulkCorrectionResult[];
+  summary: { total: number; succeeded: number; failed: number };
+};
 export type Order = "asc" | "desc";
 export type SortField = "title" | "price" | "rating" | "stock";
 

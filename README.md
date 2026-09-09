@@ -6,22 +6,22 @@ React and TypeScript client for the clinic stock console. It consumes the separa
 
 ### Screen and component model
 
-`AppShell` provides the skip link, masthead, signed-in identity, sign-out action, and main landmark. `SignInPage` owns authentication input. `StockPage` combines `StockToolbar`, `ProductGrid`, reusable asynchronous states, and `Pagination`. Each `ProductCard` links to the dedicated `/items/:id` route. `ItemPage` presents the product detail and `StockCorrectionForm`.
+`AppShell` provides the skip link, masthead, signed-in identity, sign-out action, network-status announcements, and main landmark. `SignInPage` owns authentication input. `StockPage` combines catalogue controls, reusable asynchronous states, bulk corrections, and a virtualized grid containing the complete result set. Each `ProductCard` links to the dedicated `/items/:id` route. `ItemPage` presents the product detail and stock correction form.
 
 At 360px the interface is a single column. Wider layouts progressively turn the toolbar and cards into grids and item detail into two columns. Controls remain in document flow rather than moving into a hidden drawer.
 
 ### State ownership
 
-- TanStack Query owns server data: current user, categories, product pages, and product detail.
+- TanStack Query owns server data: current user, categories, the complete product result set, and product detail.
 - The URL owns `q`, `category`, `sort`, `order`, and `page`, so reloads and copied links reproduce the view. Search, category, or sorting changes reset `page` to 1.
 - Components own transient UI state such as credentials, the stock draft, field errors, and submission announcements.
 - The client never stores credentials or tokens. Django manages a server-side session identified by an HTTP-only cookie; the current user remains query data.
 
 ### Fetching, caching, and invalidation
 
-The client calls only Django. Query keys include the complete URL state. Every fetch receives TanStack Query's `AbortSignal`, so replacing a search aborts the superseded request and an old response cannot become the current query's data. Product pages remain fresh for 30 seconds and categories for five minutes.
+The client calls only Django. Query keys include the complete URL filter and sort state. Every fetch receives TanStack Query's `AbortSignal`, so replacing a search aborts the superseded request and an old response cannot become the current query's data. Product results remain fresh for 30 seconds and categories for five minutes. The API returns up to 200 products in one request; `@tanstack/react-virtual` renders only visible rows while all 194 catalogue items remain available by scrolling.
 
-A correction disables its submit action while pending. Success updates the detail cache, invalidates all product lists, and announces completion. Failure preserves the entered count, restores the action, and displays a recoverable error. A single-flight session check prevents concurrent 401 handling. An expired session displays sign-in without replacing the route, allowing the user to resume in place.
+A correction disables its submit action while pending. Success updates the detail cache, invalidates all product lists, and announces completion. Bulk mode allows several visible products to be selected and submitted together, then reports success or failure per item. Failure preserves entered counts so failed items can be retried. A single-flight session check prevents concurrent 401 handling. An expired session displays sign-in without replacing the route, allowing the user to resume in place. Offline and restored connections are announced without replacing normal API error states.
 
 ### Visual system
 
@@ -75,6 +75,7 @@ The client expects:
 - `GET /api/auth/csrf`, `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/refresh`, `POST /api/auth/logout`
 - `GET /api/categories`
 - `GET /api/products?q=&category=&sortBy=&order=&page=&limit=`
+- `POST /api/products/bulk-corrections` with `{ "corrections": [{ "productId": number, "stock": number }] }`
 - `GET /api/products/:id`
 - `PUT /api/products/:id` with `{ "stock": number }`
 

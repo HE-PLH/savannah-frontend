@@ -1,4 +1,12 @@
-import type { Category, ListParams, Product, ProductPage, User } from "./types";
+import type {
+  BulkCorrectionResponse,
+  Category,
+  ListParams,
+  Product,
+  ProductPage,
+  StockCorrection,
+  User,
+} from "./types";
 
 const baseUrl = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
 const loginExpiryMinutes = 1;
@@ -105,5 +113,10 @@ export const api = {
     raw<Product>(`/products/${id}`, {
       method: "PUT",
       body: JSON.stringify({ stock }),
+    }),
+  bulkCorrections: (corrections: StockCorrection[]) =>
+    raw<BulkCorrectionResponse>("/products/bulk-corrections", {
+      method: "POST",
+      body: JSON.stringify({ corrections }),
     }),
 };
