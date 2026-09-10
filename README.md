@@ -49,6 +49,18 @@ The application uses semantic landmarks, headings, lists, labels, descriptions, 
 
 **Decision:** call only the Django API with credentialed cookies. **Rejected:** calling DummyJSON directly and storing bearer tokens in local storage. **Why:** the boundary reduces token exposure, centralizes refresh behavior, and ensures product reads include persisted MongoDB overrides.
 
+## AI Reflection
+1. **Use across the four sections**
+	- **Frontend:** used AI once as a second-pass review of the search cancellation path and its test; component structure, state ownership, accessibility, and styling were implemented manually.
+	- **Backend:** used AI to sanity-check failure cases around the DummyJSON boundary; authentication, persistence ordering, API design, and validation were implemented manually.
+	- **Testing and quality:** used AI to suggest one focused stale-response test, then wrote and verified the assertions against the real query behavior. The remaining test cases and lint/type-check setup were manual.
+	- **Delivery and documentation:** used AI for a brief README wording review. Deployment configuration and operational decisions were manual.
+2. **Tools and workflow:** GitHub Copilot Chat was the only AI tool used. I did not use Superpowers, GSD, Spec Kit, OpenSpec, BMAD, or another agent/spec framework. I split the brief into a task list, implemented each slice, ran its tests and static checks, and used Copilot only for a small targeted review before verifying suggestions myself.
+3. **Useful suggestion:** I prompted, “Review this TanStack Query search flow for stale-response races. Suggest one focused test; do not rewrite the hook.” The resulting idea improved coverage by checking that the superseded request is aborted and cannot publish obsolete data.
+4. **Bad suggestion:** AI suggested an optimistic stock update. That was subtly wrong because DummyJSON updates are simulated and MongoDB persistence can still fail. I caught it by tracing the write path against the requirement that a reported success must survive reload, and retained the pessimistic update.
+5. **Decisions made without AI:** I chose server-side Django sessions instead of browser-stored tokens because immediate revocation and reduced token exposure matter here. I chose a small PyMongo repository and stock overlay instead of an unofficial Django MongoDB ORM because the persistence model needs only keyed reads and upserts.
+6. **Hardest part to defend:** [`None`].
+
 ## Setup
 
 Requirements: Node.js 22+, npm 10+, and the clinic stock backend running on `http://localhost:8000`.
